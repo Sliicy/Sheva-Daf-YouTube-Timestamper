@@ -71,6 +71,7 @@
             txtLastDaf.RightToLeft = RightToLeft.Yes;
             txtLastDaf.Size = new Size(139, 23);
             txtLastDaf.TabIndex = 2;
+            txtLastDaf.TextChanged += TxtLastDaf_TextChanged;
             // 
             // btnClearTimes
             // 
@@ -124,6 +125,7 @@
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Sheva Daf YouTube Timestamper";
+            Load += MainForm_Load;
             ResumeLayout(false);
             PerformLayout();
         }

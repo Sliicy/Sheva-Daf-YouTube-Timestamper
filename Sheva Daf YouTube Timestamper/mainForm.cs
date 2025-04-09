@@ -232,5 +232,16 @@ namespace Sheva_Daf_YouTube_Timestamper
         {
             txtLastDaf.Text = "א דף א ע\"ב";
         }
+
+        private void TxtLastDaf_TextChanged(object sender, EventArgs e)
+        {
+            UserSettings.Default.LastDaf = txtLastDaf.Text;
+            UserSettings.Default.Save();
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            txtLastDaf.Text = UserSettings.Default.LastDaf;
+        }
     }
 }
