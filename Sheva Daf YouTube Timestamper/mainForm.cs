@@ -9,12 +9,50 @@ namespace Sheva_Daf_YouTube_Timestamper
             InitializeComponent();
         }
 
+        // Helper method to normalize timestamp strings to a consistent format (H:MM:SS)
+        private static string NormalizeTimestampString(string ts)
+        {
+            if (TimeSpan.TryParse(ts, out TimeSpan timeSpan))
+            {
+                // Format as H:MM:SS, e.g., "5:11:07" or "15:11:07"
+                return $"{timeSpan.Hours}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+            }
+            return ts; // Fallback, though regex should ensure parseable timestamps
+        }
+
         private void BtnGenerate_Click(object sender, EventArgs e)
         {
             string input = txtTimestamps.Text;
             if (string.IsNullOrWhiteSpace(input)) return;
             List<string> lines = [.. input.Split(Environment.NewLine)];
+
+            HashSet<string> timestampsToFilterOut = new HashSet<string>();
+            Regex timestampRegex = new Regex(@"(\d{1,2}:\d{2}:\d{2})"); // Regex to capture H:MM:SS or HH:MM:SS
+
+            foreach (string originalLineText in lines)
+            {
+                // Check if the line contains the specific phrase
+                if (originalLineText.Contains("recording is paused"))
+                {
+                    Match match = timestampRegex.Match(originalLineText);
+                    if (match.Success)
+                    {
+                        // Add the normalized timestamp to the set of timestamps to be removed
+                        timestampsToFilterOut.Add(NormalizeTimestampString(match.Groups[1].Value));
+                    }
+                }
+            }
+
             List<string> cleanerlines = SanitizeLines(ref lines);
+
+            if (timestampsToFilterOut.Count > 0)
+            {
+                // 'lines' now contains pure timestamp strings (e.g., "5:11:07", "05:11:07").
+                // Filter this list by removing any timestamp string that, when normalized,
+                // matches one of the timestamps found in "recording is paused" lines.
+                lines = lines.Where(tsLine => !timestampsToFilterOut.Contains(NormalizeTimestampString(tsLine))).ToList();
+            }
+
             lines = RemoveSimilarTimestamps(lines);
 
             cleanerlines.Clear();
@@ -120,44 +158,40 @@ namespace Sheva_Daf_YouTube_Timestamper
         private static List<string> RemoveSimilarTimestamps(List<string> lines)
         {
             // Step 1: Parse the string timestamps to TimeSpan
-            List<TimeSpan> timestamps = lines
-                .Select(ts => TimeSpan.Parse(ts))
-                .ToList();
+            List<TimeSpan> timestamps = [.. lines.Select(ts => TimeSpan.Parse(ts))];
 
             // Step 2: Sort the timestamps in chronological order
             timestamps.Sort();
 
-            // Step 3: Remove duplicates if the timestamps are within 0 to 3 seconds of each other
+            // Step 3: Reverse iterate and keep the last timestamp in any 60-second cluster
             List<TimeSpan> filteredTimestamps = [];
 
-            for (int i = 0; i < timestamps.Count; i++)
+            for (int i = timestamps.Count - 1; i >= 0; i--)
             {
-                // For the first timestamp or if the difference is more than 3 seconds, keep the timestamp
-                if (i == 0 || (timestamps[i] - timestamps[i - 1]).TotalSeconds > 3)
+                if (filteredTimestamps.Count == 0 || (filteredTimestamps[0] - timestamps[i]).TotalSeconds > 60)
                 {
-                    filteredTimestamps.Add(timestamps[i]);
+                    // Insert at beginning to preserve chronological order
+                    filteredTimestamps.Insert(0, timestamps[i]);
                 }
             }
 
-            List<string> output = [];
-            output.AddRange(from ts in filteredTimestamps
-                            select ts.ToString());
+            List<string> output = [.. filteredTimestamps.Select(ts => ts.ToString())];
 
             List<string> finalOutput = [];
             foreach (string time in output)
             {
-                if (time.StartsWith("0") && !time.StartsWith("0:"))
+                if (time.StartsWith('0') && !time.StartsWith("0:"))
                 {
-                    finalOutput.Add(time.Substring(1));
+                    finalOutput.Add(time[1..]);
                 }
                 else
                 {
                     finalOutput.Add(time);
                 }
             }
-
             return finalOutput;
         }
+
 
         public static string IncrementHebrewWord(string word)
         {
