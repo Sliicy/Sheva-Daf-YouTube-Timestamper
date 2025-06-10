@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Sheva_Daf_YouTube_Timestamper
 {
@@ -276,6 +277,61 @@ namespace Sheva_Daf_YouTube_Timestamper
         private void MainForm_Load(object sender, EventArgs e)
         {
             txtLastDaf.Text = UserSettings.Default.LastDaf;
+        }
+
+        private void BtnGoToEnd_Click(object sender, EventArgs e)
+        {
+            string input = txtTimestamps.Text;
+            double seekMinutes = GetLastTimestampInMinutes(input);
+            LaunchVlcPausedAtTime(@"C:\Program Files\VideoLAN\VLC\vlc.exe", Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "*.mkv")[0], seekMinutes);
+        }
+
+        static void LaunchVlcPausedAtTime(string vlcPath, string videoPath, double seekMinutes)
+        {
+            if (string.IsNullOrWhiteSpace(vlcPath))
+                throw new ArgumentException("VLC path is required.", nameof(vlcPath));
+            if (string.IsNullOrWhiteSpace(videoPath))
+                throw new ArgumentException("Video path is required.", nameof(videoPath));
+            if (seekMinutes < 0)
+                throw new ArgumentOutOfRangeException(nameof(seekMinutes), "Seek time must be non-negative.");
+
+            int seekSeconds = (int)(seekMinutes * 60);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = vlcPath,
+                // This line is not working to set a custom start time:
+                Arguments = $"\"{videoPath}\" --start-time=\"{seekSeconds}\"",
+                UseShellExecute = false
+            };
+
+            Process.Start(startInfo);
+        }
+
+        private static double GetLastTimestampInMinutes(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return 0;
+
+            string[] lines = input
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => Regex.Match(line, @"\d{1,2}:\d{2}(?::\d{2})?").Value) // extract time
+                .Where(time => !string.IsNullOrWhiteSpace(time))
+                .ToArray();
+
+            if (lines.Length == 0)
+                return 0;
+
+            string lastTime = lines.Last();
+
+            // Normalize format to hh:mm:ss
+            if (lastTime.Count(c => c == ':') == 1)
+                lastTime = "00:" + lastTime; // e.g. "12:34" → "00:12:34"
+
+            if (!TimeSpan.TryParse(lastTime, out TimeSpan ts))
+                return 0;
+
+            return ts.TotalMinutes;
         }
     }
 }

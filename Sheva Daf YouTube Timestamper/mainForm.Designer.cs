@@ -35,27 +35,28 @@
             btnClearTimes = new Button();
             btnFindMissingTimes = new Button();
             btnPrefill = new Button();
+            btnGoToEnd = new Button();
+            lblAmudBeis = new Label();
+            lblAmudAleph = new Label();
             SuspendLayout();
             // 
             // txtTimestamps
             // 
             txtTimestamps.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            txtTimestamps.Location = new Point(10, 9);
-            txtTimestamps.Margin = new Padding(3, 2, 3, 2);
+            txtTimestamps.Location = new Point(11, 12);
             txtTimestamps.MaxLength = 0;
             txtTimestamps.Multiline = true;
             txtTimestamps.Name = "txtTimestamps";
             txtTimestamps.ScrollBars = ScrollBars.Vertical;
-            txtTimestamps.Size = new Size(463, 388);
+            txtTimestamps.Size = new Size(529, 516);
             txtTimestamps.TabIndex = 0;
             // 
             // btnGenerate
             // 
             btnGenerate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnGenerate.Location = new Point(10, 401);
-            btnGenerate.Margin = new Padding(3, 2, 3, 2);
+            btnGenerate.Location = new Point(12, 534);
             btnGenerate.Name = "btnGenerate";
-            btnGenerate.Size = new Size(82, 22);
+            btnGenerate.Size = new Size(94, 29);
             btnGenerate.TabIndex = 1;
             btnGenerate.Text = "&Generate";
             btnGenerate.UseVisualStyleBackColor = true;
@@ -64,23 +65,21 @@
             // txtLastDaf
             // 
             txtLastDaf.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            txtLastDaf.Location = new Point(334, 402);
-            txtLastDaf.Margin = new Padding(3, 2, 3, 2);
+            txtLastDaf.Location = new Point(382, 536);
             txtLastDaf.Name = "txtLastDaf";
             txtLastDaf.PlaceholderText = "&Last Daf of prior set";
             txtLastDaf.RightToLeft = RightToLeft.Yes;
-            txtLastDaf.Size = new Size(139, 23);
-            txtLastDaf.TabIndex = 2;
+            txtLastDaf.Size = new Size(158, 27);
+            txtLastDaf.TabIndex = 4;
             txtLastDaf.TextChanged += TxtLastDaf_TextChanged;
             // 
             // btnClearTimes
             // 
             btnClearTimes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnClearTimes.Location = new Point(98, 401);
-            btnClearTimes.Margin = new Padding(3, 2, 3, 2);
+            btnClearTimes.Location = new Point(113, 534);
             btnClearTimes.Name = "btnClearTimes";
-            btnClearTimes.Size = new Size(82, 22);
-            btnClearTimes.TabIndex = 3;
+            btnClearTimes.Size = new Size(94, 29);
+            btnClearTimes.TabIndex = 2;
             btnClearTimes.Text = "&Clear Times";
             btnClearTimes.UseVisualStyleBackColor = true;
             btnClearTimes.Click += BtnClearTimes_Click;
@@ -88,11 +87,10 @@
             // btnFindMissingTimes
             // 
             btnFindMissingTimes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnFindMissingTimes.Location = new Point(10, 427);
-            btnFindMissingTimes.Margin = new Padding(3, 2, 3, 2);
+            btnFindMissingTimes.Location = new Point(12, 568);
             btnFindMissingTimes.Name = "btnFindMissingTimes";
-            btnFindMissingTimes.Size = new Size(170, 22);
-            btnFindMissingTimes.TabIndex = 4;
+            btnFindMissingTimes.Size = new Size(194, 29);
+            btnFindMissingTimes.TabIndex = 5;
             btnFindMissingTimes.Text = "&Find Missing Times";
             btnFindMissingTimes.UseVisualStyleBackColor = true;
             btnFindMissingTimes.Click += BtnFindMissingTimes_Click;
@@ -100,20 +98,53 @@
             // btnPrefill
             // 
             btnPrefill.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnPrefill.Location = new Point(391, 429);
-            btnPrefill.Margin = new Padding(3, 2, 3, 2);
+            btnPrefill.Location = new Point(447, 572);
             btnPrefill.Name = "btnPrefill";
-            btnPrefill.Size = new Size(82, 22);
-            btnPrefill.TabIndex = 5;
+            btnPrefill.Size = new Size(94, 29);
+            btnPrefill.TabIndex = 6;
             btnPrefill.Text = "&Prefill";
             btnPrefill.UseVisualStyleBackColor = true;
             btnPrefill.Click += BtnPrefill_Click;
             // 
+            // btnGoToEnd
+            // 
+            btnGoToEnd.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnGoToEnd.Location = new Point(213, 534);
+            btnGoToEnd.Name = "btnGoToEnd";
+            btnGoToEnd.Size = new Size(94, 29);
+            btnGoToEnd.TabIndex = 3;
+            btnGoToEnd.Text = "G&o To End";
+            btnGoToEnd.UseVisualStyleBackColor = true;
+            btnGoToEnd.Click += BtnGoToEnd_Click;
+            // 
+            // lblAmudBeis
+            // 
+            lblAmudBeis.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            lblAmudBeis.AutoSize = true;
+            lblAmudBeis.Location = new Point(12, 606);
+            lblAmudBeis.Name = "lblAmudBeis";
+            lblAmudBeis.Size = new Size(119, 20);
+            lblAmudBeis.TabIndex = 7;
+            lblAmudBeis.Text = "Amud Beis (Left)";
+            // 
+            // lblAmudAleph
+            // 
+            lblAmudAleph.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            lblAmudAleph.AutoSize = true;
+            lblAmudAleph.Location = new Point(400, 606);
+            lblAmudAleph.Name = "lblAmudAleph";
+            lblAmudAleph.Size = new Size(141, 20);
+            lblAmudAleph.TabIndex = 8;
+            lblAmudAleph.Text = "Amud Aleph (Right)";
+            // 
             // MainForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(484, 461);
+            ClientSize = new Size(553, 635);
+            Controls.Add(lblAmudAleph);
+            Controls.Add(lblAmudBeis);
+            Controls.Add(btnGoToEnd);
             Controls.Add(btnPrefill);
             Controls.Add(btnFindMissingTimes);
             Controls.Add(btnClearTimes);
@@ -121,7 +152,6 @@
             Controls.Add(btnGenerate);
             Controls.Add(txtTimestamps);
             Icon = (Icon)resources.GetObject("$this.Icon");
-            Margin = new Padding(3, 2, 3, 2);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Sheva Daf YouTube Timestamper";
@@ -138,5 +168,8 @@
         private Button btnClearTimes;
         private Button btnFindMissingTimes;
         private Button btnPrefill;
+        private Button btnGoToEnd;
+        private Label lblAmudBeis;
+        private Label lblAmudAleph;
     }
 }
