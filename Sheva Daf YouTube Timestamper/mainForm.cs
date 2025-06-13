@@ -281,12 +281,47 @@ namespace Sheva_Daf_YouTube_Timestamper
 
         private void BtnGoToEnd_Click(object sender, EventArgs e)
         {
-            string input = txtTimestamps.Text;
-            double seekMinutes = GetLastTimestampInMinutes(input);
-            LaunchVlcPausedAtTime(@"C:\Program Files\VideoLAN\VLC\vlc.exe", Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "*.mkv")[0], seekMinutes);
+            string buttonText = btnGoToEnd.Text;
+
+            // Extract the timestamp from the button text (e.g., "G&o To 2:16:32")
+            Match match = Regex.Match(buttonText, @"\b\d{1,2}:\d{2}:\d{2}\b");
+            if (!match.Success)
+            {
+                MessageBox.Show("No valid timestamp found in the button text.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string timestamp = match.Value;
+
+            if (!TimeSpan.TryParse(timestamp, out TimeSpan timeSpan))
+            {
+                MessageBox.Show("Invalid timestamp format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Subtract 3 seconds for best viewing context, but ensure it doesn't go below zero
+            TimeSpan seekTime = timeSpan.TotalSeconds > 3
+                ? timeSpan - TimeSpan.FromSeconds(3)
+                : TimeSpan.Zero;
+
+            double seekMinutes = seekTime.TotalMinutes;
+
+            string videoPath = Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "*.mkv").FirstOrDefault();
+            if (videoPath == null)
+            {
+                MessageBox.Show("No .mkv file found in My Videos.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            LaunchVlcPausedAtTime(
+                @"C:\Program Files\VideoLAN\VLC\vlc.exe",
+                videoPath,
+                seekMinutes,
+                10
+            );
         }
 
-        static void LaunchVlcPausedAtTime(string vlcPath, string videoPath, double seekMinutes)
+        static void LaunchVlcPausedAtTime(string vlcPath, string videoPath, double seekMinutes, int killAfterXSeconds = 0)
         {
             if (string.IsNullOrWhiteSpace(vlcPath))
                 throw new ArgumentException("VLC path is required.", nameof(vlcPath));
@@ -300,12 +335,33 @@ namespace Sheva_Daf_YouTube_Timestamper
             var startInfo = new ProcessStartInfo
             {
                 FileName = vlcPath,
-                // This line is not working to set a custom start time:
-                Arguments = $"\"{videoPath}\" --start-time=\"{seekSeconds}\"",
+                Arguments = $"\"{videoPath}\" --start-time={seekSeconds} --play-and-pause",
                 UseShellExecute = false
             };
 
-            Process.Start(startInfo);
+            Process vlcProcess = Process.Start(startInfo);
+
+            if (killAfterXSeconds > 0)
+            {
+                Task.Run(async () =>
+                {
+                    await Task.Delay(killAfterXSeconds * 1000);
+
+                    // Kill all VLC processes
+                    foreach (var proc in Process.GetProcessesByName("vlc"))
+                    {
+                        try
+                        {
+                            proc.Kill();
+                        }
+                        catch (Exception ex)
+                        {
+                            // Optional: log or handle exceptions from killing processes
+                            Console.WriteLine($"Failed to kill process {proc.Id}: {ex.Message}");
+                        }
+                    }
+                });
+            }
         }
 
         private static double GetLastTimestampInMinutes(string input)
@@ -332,6 +388,81 @@ namespace Sheva_Daf_YouTube_Timestamper
                 return 0;
 
             return ts.TotalMinutes;
+        }
+
+        private void UpdateGoToButton()
+        {
+            int caretIndex = txtTimestamps.SelectionStart;
+            string[] lines = txtTimestamps.Lines;
+
+            int runningLength = 0;
+            foreach (string line in lines)
+            {
+                int lineLengthWithNewline = line.Length + Environment.NewLine.Length;
+
+                if (caretIndex >= runningLength && caretIndex < runningLength + lineLengthWithNewline)
+                {
+                    // Try to find a timestamp anywhere in the line
+                    Match match = Regex.Match(line, @"\b\d{1,2}:\d{2}:\d{2}\b");
+                    if (match.Success)
+                    {
+                        string normalized = NormalizeTimestampString(match.Value);
+                        btnGoToEnd.Text = $"G&o To {normalized}";
+                    }
+                    return;
+                }
+
+                runningLength += lineLengthWithNewline;
+            }
+        }
+
+        private void TxtTimestamps_Click(object sender, EventArgs e)
+        {
+            UpdateGoToButton();
+        }
+
+        private void TxtTimestamps_KeyDown(object sender, KeyEventArgs e)
+        {
+            UpdateGoToButton();
+        }
+
+        private void TxtTimestamps_KeyUp(object sender, KeyEventArgs e)
+        {
+            UpdateGoToButton();
+        }
+
+        private void BtnUseNextSet_Click(object sender, EventArgs e)
+        {
+            // Get all lines from the timestamps box
+            string[] lines = txtTimestamps.Lines;
+
+            // Find the last daf from the bottom, looking for: "דף <Daf> ע"<letter>"
+            string lastDaf = null;
+            for (int i = lines.Length - 1; i >= 0; i--)
+            {
+                string line = lines[i];
+                if (line.Contains("דף "))
+                {
+                    Match dafMatch = Regex.Match(line, @"דף\s+(.+?)\s+ע""[אב]");
+                    if (dafMatch.Success)
+                    {
+                        lastDaf = dafMatch.Groups[1].Value.Trim();
+                        break;
+                    }
+                }
+            }
+
+            if (lastDaf == null)
+            {
+                return;
+            }
+
+            // Replace the daf in txtLastDaf, preserving the rest of the text (side like ע"א or ע"ב)
+            string currentText = txtLastDaf.Text;
+            string updatedText = Regex.Replace(currentText, @"(דף\s+)(.+?)(\s+ע""[אב])", $"$1{lastDaf}$3");
+
+            txtLastDaf.Text = updatedText;
+            txtTimestamps.Clear();
         }
     }
 }
