@@ -114,7 +114,7 @@ namespace Sheva_Daf_YouTube_Timestamper
             return cleanerlines;
         }
 
-        private static (string Midpoint, string ElapsedTime) FindMidpointOfLargestGap(List<string> lines)
+        private static List<(string Midpoint, string ElapsedTime)> FindMidpointsOfLargestGaps(List<string> lines, int numberOfGaps = 5)
         {
             // Step 1: Parse timestamps to TimeSpan and sort them
             List<TimeSpan> timestamps = lines
@@ -127,33 +127,38 @@ namespace Sheva_Daf_YouTube_Timestamper
                 throw new ArgumentException("At least two timestamps are required.");
             }
 
-            // Step 2: Find the largest gap
-            TimeSpan maxGap = TimeSpan.Zero;
-            TimeSpan midpoint = TimeSpan.Zero;
+            // Step 2: Compute all gaps with their midpoints
+            var gaps = new List<(TimeSpan Gap, TimeSpan Midpoint)>();
 
             for (int i = 1; i < timestamps.Count; i++)
             {
                 TimeSpan gap = timestamps[i] - timestamps[i - 1];
-
-                if (gap > maxGap)
-                {
-                    maxGap = gap;
-                    midpoint = timestamps[i - 1] + TimeSpan.FromTicks(gap.Ticks / 2);
-                }
+                TimeSpan midpoint = timestamps[i - 1] + TimeSpan.FromTicks(gap.Ticks / 2);
+                gaps.Add((gap, midpoint));
             }
 
-            // Step 3: Format midpoint as HH:MM:SS
-            string midpointFormatted = $"{(int)midpoint.TotalHours:D2}:{midpoint.Minutes:D2}:{midpoint.Seconds:D2}";
+            // Step 3: Sort by gap descending and take the top `numberOfGaps`
+            var topGaps = gaps
+                .OrderByDescending(g => g.Gap)
+                .Take(numberOfGaps)
+                .ToList();
 
-            // Step 4: Format elapsed time (excluding zero values)
-            List<string> elapsedParts = new List<string>();
-            if (maxGap.Hours > 0) elapsedParts.Add($"{maxGap.Hours} hour{(maxGap.Hours > 1 ? "s" : "")}");
-            if (maxGap.Minutes > 0) elapsedParts.Add($"{maxGap.Minutes} minute{(maxGap.Minutes > 1 ? "s" : "")}");
-            if (maxGap.Seconds > 0) elapsedParts.Add($"{maxGap.Seconds} second{(maxGap.Seconds > 1 ? "s" : "")}");
+            // Step 4: Format the results
+            var results = new List<(string Midpoint, string ElapsedTime)>();
+            foreach (var (gap, midpoint) in topGaps)
+            {
+                string midpointFormatted = $"{(int)midpoint.TotalHours:D2}:{midpoint.Minutes:D2}:{midpoint.Seconds:D2}";
 
-            string elapsedTime = string.Join(", ", elapsedParts);
+                List<string> elapsedParts = new List<string>();
+                if (gap.Hours > 0) elapsedParts.Add($"{gap.Hours} hour{(gap.Hours > 1 ? "s" : "")}");
+                if (gap.Minutes > 0) elapsedParts.Add($"{gap.Minutes} minute{(gap.Minutes > 1 ? "s" : "")}");
+                if (gap.Seconds > 0) elapsedParts.Add($"{gap.Seconds} second{(gap.Seconds > 1 ? "s" : "")}");
 
-            return (midpointFormatted, elapsedTime);
+                string elapsedTime = string.Join(", ", elapsedParts);
+                results.Add((midpointFormatted, elapsedTime));
+            }
+
+            return results;
         }
 
         private static List<string> RemoveSimilarTimestamps(List<string> lines)
@@ -259,8 +264,14 @@ namespace Sheva_Daf_YouTube_Timestamper
             List<string> lines = [.. input.Split(Environment.NewLine)];
             List<string> cleanerlines = SanitizeLines(ref lines);
             lines = RemoveSimilarTimestamps(lines);
-            (string midpoint, string elapsedTime) = FindMidpointOfLargestGap(lines);
-            MessageBox.Show($"Timestamp {midpoint} has the largest gap of {elapsedTime}.", "Detected Gap", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            List<(string midpoint, string elapsedTime)> gaps = FindMidpointsOfLargestGaps(lines);
+            string finalMessage = "";
+            foreach (var gap in gaps)
+            {
+                finalMessage += $"{gap.midpoint} has a gap of {gap.elapsedTime}." + Environment.NewLine;
+            }
+            //(string midpoint, string elapsedTime) = FindMidpointOfLargestGap(lines);
+            MessageBox.Show(finalMessage, "Detected Gap", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void BtnPrefill_Click(object sender, EventArgs e)
