@@ -25,72 +25,237 @@ namespace Sheva_Daf_YouTube_Timestamper
         {
             string input = txtTimestamps.Text;
             if (string.IsNullOrWhiteSpace(input)) return;
-            List<string> lines = [.. input.Split(Environment.NewLine)];
+
+            List<string> rawLines = [.. input.Split(Environment.NewLine)];
+            List<string> regularLines = new List<string>();
+            List<string> chiddushTimestamps = new List<string>();
+
+            // Logic to separate Chiddushim from Regular timestamps
+            Regex tsRegex = new Regex(@"(\d{1,2}:\d{2}:\d{2})");
+            bool nextIsChiddush = false;
+
+            foreach (string line in rawLines)
+            {
+                // Detect context
+                if (line.Contains("HOTKEY:Chiddush"))
+                {
+                    nextIsChiddush = true;
+                    continue; // Don't add the Hotkey label to either list
+                }
+                else if (line.Contains("HOTKEY:Timestamp"))
+                {
+                    nextIsChiddush = false;
+                    continue;
+                }
+
+                // Check if line has a timestamp
+                Match match = tsRegex.Match(line);
+                if (match.Success)
+                {
+                    string cleanTs = NormalizeTimestampString(match.Value);
+
+                    if (nextIsChiddush)
+                    {
+                        chiddushTimestamps.Add(cleanTs);
+                        nextIsChiddush = false; // Reset after consuming
+                                                // Do not add to regularLines
+                    }
+                    else
+                    {
+                        regularLines.Add(line);
+                    }
+                }
+                else
+                {
+                    // Non-timestamp lines (e.g., EVENT:STOP) go to regular processing
+                    // unless they are specifically part of the Chiddush block structure, 
+                    // but usually we want to keep structure for existing logic.
+                    regularLines.Add(line);
+                }
+            }
+
+            // Process Chiddushim into pairs
+            List<string> chiddushPairs = new List<string>();
+            for (int i = 0; i < chiddushTimestamps.Count; i += 2)
+            {
+                string start = chiddushTimestamps[i];
+                string end = (i + 1 < chiddushTimestamps.Count) ? chiddushTimestamps[i + 1] : "???";
+                chiddushPairs.Add($"{start} - {end}");
+            }
+
+            if (chiddushPairs.Count > 0)
+            {
+                txtChiddushim.Text = string.Join(Environment.NewLine, chiddushPairs);
+                if (chiddushTimestamps.Count % 2 != 0)
+                {
+                    MessageBox.Show("Odd number of Chiddush timestamps detected. Please check the last entry in the bottom box.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+
+            // --- Proceed with existing logic using 'regularLines' instead of original input ---
 
             HashSet<string> timestampsToFilterOut = new HashSet<string>();
-            Regex timestampRegex = new Regex(@"(\d{1,2}:\d{2}:\d{2})"); // Regex to capture H:MM:SS or HH:MM:SS
+            Regex timestampRegex = new Regex(@"(\d{1,2}:\d{2}:\d{2})");
 
-            foreach (string originalLineText in lines)
+            foreach (string originalLineText in regularLines)
             {
-                // Check if the line contains the specific phrase
                 if (originalLineText.Contains("recording is paused"))
                 {
                     Match match = timestampRegex.Match(originalLineText);
                     if (match.Success)
                     {
-                        // Add the normalized timestamp to the set of timestamps to be removed
                         timestampsToFilterOut.Add(NormalizeTimestampString(match.Groups[1].Value));
                     }
                 }
             }
 
-            List<string> cleanerlines = SanitizeLines(ref lines);
+            List<string> cleanerlines = SanitizeLines(ref regularLines);
 
             if (timestampsToFilterOut.Count > 0)
             {
-                // 'lines' now contains pure timestamp strings (e.g., "5:11:07", "05:11:07").
-                // Filter this list by removing any timestamp string that, when normalized,
-                // matches one of the timestamps found in "recording is paused" lines.
-                lines = lines.Where(tsLine => !timestampsToFilterOut.Contains(NormalizeTimestampString(tsLine))).ToList();
+                regularLines = regularLines.Where(tsLine => !timestampsToFilterOut.Contains(NormalizeTimestampString(tsLine))).ToList();
             }
 
-            lines = RemoveSimilarTimestamps(lines);
+            regularLines = RemoveSimilarTimestamps(regularLines);
 
             cleanerlines.Clear();
-            foreach (string line in lines)
+            foreach (string line in regularLines)
             {
                 cleanerlines.Add(line + " ");
             }
 
-            cleanerlines[0] = cleanerlines[0] + "הקדמה";
-            txtLastDaf.Text = txtLastDaf.Text.Trim();
-            string referencedDaf = txtLastDaf.Text;
-
-            List<string> output = [cleanerlines[0]];
-
-            foreach (string line in cleanerlines.Skip(1))
+            if (cleanerlines.Count > 0)
             {
-                string currentAmud = "";
-                if (referencedDaf.Contains("ע\"א"))
+                cleanerlines[0] = cleanerlines[0] + "הקדמה";
+                txtLastDaf.Text = txtLastDaf.Text.Trim();
+                string referencedDaf = txtLastDaf.Text;
+
+                List<string> output = [cleanerlines[0]];
+
+                foreach (string line in cleanerlines.Skip(1))
                 {
-                    currentAmud = "ע\"ב";
-                    referencedDaf = referencedDaf.Replace("ע\"א", currentAmud);
+                    string currentAmud = "";
+                    if (referencedDaf.Contains("ע\"א"))
+                    {
+                        currentAmud = "ע\"ב";
+                        referencedDaf = referencedDaf.Replace("ע\"א", currentAmud);
+                    }
+                    else
+                    {
+                        currentAmud = "ע\"א";
+                        referencedDaf = referencedDaf.Replace("ע\"ב", currentAmud);
+                        string currentDafLetter = referencedDaf.Split("דף ")[1].Split(" " + currentAmud)[0];
+                        referencedDaf = referencedDaf.Replace(
+                            "דף " + currentDafLetter + " " + currentAmud,
+                            "דף " + IncrementHebrewWord(currentDafLetter) + " " + currentAmud
+                            );
+                    }
+                    output.Add(line + referencedDaf);
                 }
-                else
-                {
-                    currentAmud = "ע\"א";
-                    referencedDaf = referencedDaf.Replace("ע\"ב", currentAmud);
-                    string currentDafLetter = referencedDaf.Split("דף ")[1].Split(" " + currentAmud)[0];
-                    referencedDaf = referencedDaf.Replace(
-                        "דף " + currentDafLetter + " " + currentAmud,
-                        "דף " + IncrementHebrewWord(currentDafLetter) + " " + currentAmud
-                        );
-                }
-                output.Add(line + referencedDaf);
+                txtTimestamps.Text = string.Join(Environment.NewLine, output);
+            }
+        }
+
+        private void BtnExtractChiddushim_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtChiddushim.Text))
+            {
+                MessageBox.Show("No Chiddush timestamps found.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
+            // --- CONFIGURATION ---
+            // CHANGE THIS if ffmpeg is not in your global System PATH.
+            // Example: string ffmpegPath = @"C:\ffmpeg\bin\ffmpeg.exe";
+            string ffmpegPath = "ffmpeg";
+            // ---------------------
 
-            txtTimestamps.Text = string.Join(Environment.NewLine, output);
+            // Check if video exists
+            string videoPath = Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "*.mkv").FirstOrDefault();
+            if (videoPath == null)
+            {
+                MessageBox.Show("No .mkv file found in My Videos folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string outputDir = Path.GetDirectoryName(videoPath);
+            string baseFileName = Path.GetFileNameWithoutExtension(videoPath);
+            string[] lines = txtChiddushim.Lines;
+            int count = 1;
+            List<string> errors = new List<string>();
+
+            foreach (string line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                var parts = line.Split('-');
+                if (parts.Length != 2) continue;
+
+                string start = parts[0].Trim();
+                string end = parts[1].Trim();
+
+                if (end == "???" || string.IsNullOrEmpty(end)) continue;
+
+                string outputFile = Path.Combine(outputDir, $"{baseFileName}_Chiddush_{count}.mp3");
+
+                // FFMPEG Command Explanation:
+                // -y : Overwrite output without asking
+                // -i : Input file
+                // -ss : Start time (placed AFTER -i here for precision cutting, though slower than placing before)
+                // -to : End time
+                // -vn : No video (audio only)
+                // -acodec libmp3lame : Encode to MP3
+                // -q:a 2 : High quality VBR audio
+
+                string arguments = $"-y -i \"{videoPath}\" -ss {start} -to {end} -vn -acodec libmp3lame -q:a 2 \"{outputFile}\"";
+
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = ffmpegPath,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true, // Capture errors
+                    RedirectStandardOutput = true
+                };
+
+                try
+                {
+                    using (Process p = Process.Start(psi))
+                    {
+                        // FFmpeg writes progress/errors to StandardError, not StandardOutput
+                        string errorOutput = p.StandardError.ReadToEnd();
+                        p.WaitForExit();
+
+                        if (p.ExitCode != 0)
+                        {
+                            errors.Add($"Snippet {count} Failed:\n{errorOutput}");
+                        }
+                    }
+                }
+                catch (System.ComponentModel.Win32Exception)
+                {
+                    MessageBox.Show($"Could not find FFmpeg at: '{ffmpegPath}'.\n\nPlease ensure FFmpeg is installed and the path in the code is correct.",
+                        "FFmpeg Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Snippet {count} Exception: {ex.Message}");
+                }
+
+                count++;
+            }
+
+            if (errors.Count > 0)
+            {
+                // Show the first error log to help debug
+                MessageBox.Show($"Completed with errors.\n\nFirst Error Detail:\n{errors[0]}", "FFmpeg Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                MessageBox.Show($"Successfully created {count - 1} audio snippets in:\n{outputDir}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         private static List<string> SanitizeLines(ref List<string> lines)

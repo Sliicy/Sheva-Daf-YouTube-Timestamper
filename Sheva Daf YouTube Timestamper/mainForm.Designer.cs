@@ -39,18 +39,19 @@
             lblAmudBeis = new Label();
             lblAmudAleph = new Label();
             btnUseNextSet = new Button();
+            txtChiddushim = new TextBox();
+            btnExtractChiddushim = new Button();
             SuspendLayout();
             // 
             // txtTimestamps
             // 
             txtTimestamps.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            txtTimestamps.Location = new Point(10, 9);
-            txtTimestamps.Margin = new Padding(3, 2, 3, 2);
+            txtTimestamps.Location = new Point(11, 12);
             txtTimestamps.MaxLength = 0;
             txtTimestamps.Multiline = true;
             txtTimestamps.Name = "txtTimestamps";
             txtTimestamps.ScrollBars = ScrollBars.Vertical;
-            txtTimestamps.Size = new Size(463, 388);
+            txtTimestamps.Size = new Size(529, 332);
             txtTimestamps.TabIndex = 0;
             txtTimestamps.Click += TxtTimestamps_Click;
             txtTimestamps.KeyDown += TxtTimestamps_KeyDown;
@@ -59,10 +60,9 @@
             // btnGenerate
             // 
             btnGenerate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnGenerate.Location = new Point(10, 400);
-            btnGenerate.Margin = new Padding(3, 2, 3, 2);
+            btnGenerate.Location = new Point(11, 533);
             btnGenerate.Name = "btnGenerate";
-            btnGenerate.Size = new Size(82, 22);
+            btnGenerate.Size = new Size(94, 29);
             btnGenerate.TabIndex = 1;
             btnGenerate.Text = "&Generate";
             btnGenerate.UseVisualStyleBackColor = true;
@@ -71,22 +71,20 @@
             // txtLastDaf
             // 
             txtLastDaf.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            txtLastDaf.Location = new Point(334, 402);
-            txtLastDaf.Margin = new Padding(3, 2, 3, 2);
+            txtLastDaf.Location = new Point(382, 536);
             txtLastDaf.Name = "txtLastDaf";
             txtLastDaf.PlaceholderText = "&Last Daf of prior set";
             txtLastDaf.RightToLeft = RightToLeft.Yes;
-            txtLastDaf.Size = new Size(139, 23);
+            txtLastDaf.Size = new Size(158, 27);
             txtLastDaf.TabIndex = 4;
             txtLastDaf.TextChanged += TxtLastDaf_TextChanged;
             // 
             // btnClearTimes
             // 
             btnClearTimes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnClearTimes.Location = new Point(99, 400);
-            btnClearTimes.Margin = new Padding(3, 2, 3, 2);
+            btnClearTimes.Location = new Point(113, 533);
             btnClearTimes.Name = "btnClearTimes";
-            btnClearTimes.Size = new Size(82, 22);
+            btnClearTimes.Size = new Size(94, 29);
             btnClearTimes.TabIndex = 2;
             btnClearTimes.Text = "&Clear Times";
             btnClearTimes.UseVisualStyleBackColor = true;
@@ -95,10 +93,9 @@
             // btnFindMissingTimes
             // 
             btnFindMissingTimes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnFindMissingTimes.Location = new Point(10, 426);
-            btnFindMissingTimes.Margin = new Padding(3, 2, 3, 2);
+            btnFindMissingTimes.Location = new Point(11, 568);
             btnFindMissingTimes.Name = "btnFindMissingTimes";
-            btnFindMissingTimes.Size = new Size(170, 22);
+            btnFindMissingTimes.Size = new Size(194, 29);
             btnFindMissingTimes.TabIndex = 5;
             btnFindMissingTimes.Text = "&Find Missing Times";
             btnFindMissingTimes.UseVisualStyleBackColor = true;
@@ -107,10 +104,9 @@
             // btnPrefill
             // 
             btnPrefill.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnPrefill.Location = new Point(391, 429);
-            btnPrefill.Margin = new Padding(3, 2, 3, 2);
+            btnPrefill.Location = new Point(447, 572);
             btnPrefill.Name = "btnPrefill";
-            btnPrefill.Size = new Size(82, 22);
+            btnPrefill.Size = new Size(94, 29);
             btnPrefill.TabIndex = 6;
             btnPrefill.Text = "&Prefill";
             btnPrefill.UseVisualStyleBackColor = true;
@@ -119,10 +115,9 @@
             // btnGoToEnd
             // 
             btnGoToEnd.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnGoToEnd.Location = new Point(187, 400);
-            btnGoToEnd.Margin = new Padding(3, 2, 3, 2);
+            btnGoToEnd.Location = new Point(214, 533);
             btnGoToEnd.Name = "btnGoToEnd";
-            btnGoToEnd.Size = new Size(141, 22);
+            btnGoToEnd.Size = new Size(161, 29);
             btnGoToEnd.TabIndex = 3;
             btnGoToEnd.Text = "G&o To 0:00:00";
             btnGoToEnd.UseVisualStyleBackColor = true;
@@ -132,9 +127,9 @@
             // 
             lblAmudBeis.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             lblAmudBeis.AutoSize = true;
-            lblAmudBeis.Location = new Point(10, 454);
+            lblAmudBeis.Location = new Point(11, 605);
             lblAmudBeis.Name = "lblAmudBeis";
-            lblAmudBeis.Size = new Size(95, 15);
+            lblAmudBeis.Size = new Size(119, 20);
             lblAmudBeis.TabIndex = 7;
             lblAmudBeis.Text = "Amud Beis (Left)";
             // 
@@ -142,27 +137,54 @@
             // 
             lblAmudAleph.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             lblAmudAleph.AutoSize = true;
-            lblAmudAleph.Location = new Point(350, 454);
+            lblAmudAleph.Location = new Point(263, 608);
             lblAmudAleph.Name = "lblAmudAleph";
-            lblAmudAleph.Size = new Size(113, 15);
+            lblAmudAleph.Size = new Size(141, 20);
             lblAmudAleph.TabIndex = 8;
             lblAmudAleph.Text = "Amud Aleph (Right)";
             // 
             // btnUseNextSet
             // 
-            btnUseNextSet.Location = new Point(303, 429);
+            btnUseNextSet.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnUseNextSet.Location = new Point(346, 572);
+            btnUseNextSet.Margin = new Padding(3, 4, 3, 4);
             btnUseNextSet.Name = "btnUseNextSet";
-            btnUseNextSet.Size = new Size(82, 23);
+            btnUseNextSet.Size = new Size(94, 31);
             btnUseNextSet.TabIndex = 9;
             btnUseNextSet.Text = "Use &Next Set";
             btnUseNextSet.UseVisualStyleBackColor = true;
             btnUseNextSet.Click += BtnUseNextSet_Click;
             // 
+            // txtChiddushim
+            // 
+            txtChiddushim.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            txtChiddushim.Location = new Point(11, 353);
+            txtChiddushim.Multiline = true;
+            txtChiddushim.Name = "txtChiddushim";
+            txtChiddushim.PlaceholderText = "Chiddushim Start - End times will appear here...";
+            txtChiddushim.ScrollBars = ScrollBars.Vertical;
+            txtChiddushim.Size = new Size(529, 172);
+            txtChiddushim.TabIndex = 10;
+            // 
+            // btnExtractChiddushim
+            // 
+            btnExtractChiddushim.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnExtractChiddushim.Location = new Point(216, 572);
+            btnExtractChiddushim.Margin = new Padding(3, 4, 3, 4);
+            btnExtractChiddushim.Name = "btnExtractChiddushim";
+            btnExtractChiddushim.Size = new Size(124, 30);
+            btnExtractChiddushim.TabIndex = 11;
+            btnExtractChiddushim.Text = "Extract &Audio Snippets";
+            btnExtractChiddushim.UseVisualStyleBackColor = true;
+            btnExtractChiddushim.Click += BtnExtractChiddushim_Click;
+            // 
             // MainForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(484, 476);
+            ClientSize = new Size(553, 647);
+            Controls.Add(btnExtractChiddushim);
+            Controls.Add(txtChiddushim);
             Controls.Add(btnUseNextSet);
             Controls.Add(lblAmudAleph);
             Controls.Add(lblAmudBeis);
@@ -174,7 +196,6 @@
             Controls.Add(btnGenerate);
             Controls.Add(txtTimestamps);
             Icon = (Icon)resources.GetObject("$this.Icon");
-            Margin = new Padding(3, 2, 3, 2);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Sheva Daf YouTube Timestamper";
@@ -183,8 +204,12 @@
             PerformLayout();
         }
 
+
         #endregion
 
+        // Add these fields to the designer class or manually inside the form class if not using designer file
+        private TextBox txtChiddushim;
+        private Button btnExtractChiddushim;
         private TextBox txtTimestamps;
         private Button btnGenerate;
         private TextBox txtLastDaf;
