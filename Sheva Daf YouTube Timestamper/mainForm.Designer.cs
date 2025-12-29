@@ -127,7 +127,7 @@
             // 
             lblAmudBeis.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             lblAmudBeis.AutoSize = true;
-            lblAmudBeis.Location = new Point(11, 605);
+            lblAmudBeis.Location = new Point(12, 618);
             lblAmudBeis.Name = "lblAmudBeis";
             lblAmudBeis.Size = new Size(119, 20);
             lblAmudBeis.TabIndex = 7;
@@ -137,7 +137,7 @@
             // 
             lblAmudAleph.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             lblAmudAleph.AutoSize = true;
-            lblAmudAleph.Location = new Point(263, 608);
+            lblAmudAleph.Location = new Point(400, 618);
             lblAmudAleph.Name = "lblAmudAleph";
             lblAmudAleph.Size = new Size(141, 20);
             lblAmudAleph.TabIndex = 8;
