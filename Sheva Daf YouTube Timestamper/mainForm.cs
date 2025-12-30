@@ -27,38 +27,60 @@ namespace Sheva_Daf_YouTube_Timestamper
             if (string.IsNullOrWhiteSpace(input)) return;
 
             List<string> rawLines = [.. input.Split(Environment.NewLine)];
+
+            int lastStartIndex = rawLines.FindLastIndex(l => l.Contains("EVENT:START RECORDING"));
+            if (lastStartIndex >= 0) rawLines = rawLines.Skip(lastStartIndex).ToList();
+
             List<string> regularLines = new List<string>();
-            List<string> chiddushTimestamps = new List<string>();
 
             // Logic to separate Chiddushim from Regular timestamps
             Regex tsRegex = new Regex(@"(\d{1,2}:\d{2}:\d{2})");
-            bool nextIsChiddush = false;
+            bool capturingStart = false;
+            bool capturingEnd = false;
+            string pendingStart = null;
+            List<string> chiddushPairs = new List<string>();
 
             foreach (string line in rawLines)
             {
-                // Detect context
-                if (line.Contains("HOTKEY:Chiddush"))
+                if (line.Contains("HOTKEY:Chiddush Start"))
                 {
-                    nextIsChiddush = true;
-                    continue; // Don't add the Hotkey label to either list
+                    // Only look for a start if we aren't already "inside" a chiddush
+                    if (pendingStart == null) capturingStart = true;
+                    continue;
+                }
+                else if (line.Contains("HOTKEY:Chiddush End"))
+                {
+                    // Only look for an end if we have a start waiting to be closed
+                    if (pendingStart != null) capturingEnd = true;
+                    continue;
                 }
                 else if (line.Contains("HOTKEY:Timestamp"))
                 {
-                    nextIsChiddush = false;
+                    capturingStart = capturingEnd = false; // Reset capture states for regular timestamps
                     continue;
                 }
 
-                // Check if line has a timestamp
                 Match match = tsRegex.Match(line);
                 if (match.Success)
                 {
                     string cleanTs = NormalizeTimestampString(match.Value);
 
-                    if (nextIsChiddush)
+                    if (capturingStart)
                     {
-                        chiddushTimestamps.Add(cleanTs);
-                        nextIsChiddush = false; // Reset after consuming
-                                                // Do not add to regularLines
+                        pendingStart = cleanTs;
+                        capturingStart = false;
+                    }
+                    else if (capturingEnd)
+                    {
+                        chiddushPairs.Add($"{pendingStart} - {cleanTs}");
+                        pendingStart = null;
+                        capturingEnd = false;
+                    }
+                    else if (pendingStart != null)
+                    {
+                        // If we are mid-chiddush but this isn't the specific Start/End TS, 
+                        // ignore it so duplicate "Start" timestamps don't go to regularLines.
+                        continue;
                     }
                     else
                     {
@@ -67,29 +89,15 @@ namespace Sheva_Daf_YouTube_Timestamper
                 }
                 else
                 {
-                    // Non-timestamp lines (e.g., EVENT:STOP) go to regular processing
-                    // unless they are specifically part of the Chiddush block structure, 
-                    // but usually we want to keep structure for existing logic.
                     regularLines.Add(line);
                 }
             }
 
-            // Process Chiddushim into pairs
-            List<string> chiddushPairs = new List<string>();
-            for (int i = 0; i < chiddushTimestamps.Count; i += 2)
+            // Update the Chiddush text box and warn if a pair is incomplete
+            txtChiddushim.Text = string.Join(Environment.NewLine, chiddushPairs);
+            if (pendingStart != null)
             {
-                string start = chiddushTimestamps[i];
-                string end = (i + 1 < chiddushTimestamps.Count) ? chiddushTimestamps[i + 1] : "???";
-                chiddushPairs.Add($"{start} - {end}");
-            }
-
-            if (chiddushPairs.Count > 0)
-            {
-                txtChiddushim.Text = string.Join(Environment.NewLine, chiddushPairs);
-                if (chiddushTimestamps.Count % 2 != 0)
-                {
-                    MessageBox.Show("Odd number of Chiddush timestamps detected. Please check the last entry in the bottom box.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                MessageBox.Show("The last Chiddush was started but never ended.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
             // --- Proceed with existing logic using 'regularLines' instead of original input ---
@@ -156,106 +164,66 @@ namespace Sheva_Daf_YouTube_Timestamper
             }
         }
 
-        private void BtnExtractChiddushim_Click(object sender, EventArgs e)
+        private async void BtnExtractChiddushim_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtChiddushim.Text))
-            {
-                MessageBox.Show("No Chiddush timestamps found.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+            if (string.IsNullOrWhiteSpace(txtChiddushim.Text)) return;
 
-            // --- CONFIGURATION ---
-            // CHANGE THIS if ffmpeg is not in your global System PATH.
-            // Example: string ffmpegPath = @"C:\ffmpeg\bin\ffmpeg.exe";
             string ffmpegPath = "ffmpeg";
-            // ---------------------
-
-            // Check if video exists
             string videoPath = Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "*.mkv").FirstOrDefault();
-            if (videoPath == null)
-            {
-                MessageBox.Show("No .mkv file found in My Videos folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            if (videoPath == null) { MessageBox.Show("Video not found."); return; }
 
+            btnExtractChiddushim.Enabled = false;
             string outputDir = Path.GetDirectoryName(videoPath);
             string baseFileName = Path.GetFileNameWithoutExtension(videoPath);
-            string[] lines = txtChiddushim.Lines;
-            int count = 1;
-            List<string> errors = new List<string>();
+            string[] lines = txtChiddushim.Lines.Where(l => l.Contains("-")).ToArray();
 
-            foreach (string line in lines)
+            // Setup Progress Bar
+            progressBar1.Value = 0;
+            progressBar1.Maximum = lines.Length;
+            var progress = new Progress<int>(v => progressBar1.Value += v);
+
+            var snippetFiles = new List<string>();
+            var tasks = new List<Task>();
+
+            for (int i = 0; i < lines.Length; i++)
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
+                int index = i;
+                string line = lines[i];
                 var parts = line.Split('-');
-                if (parts.Length != 2) continue;
-
-                string start = parts[0].Trim();
-                string end = parts[1].Trim();
-
+                string start = parts[0].Trim(), end = parts[1].Trim();
                 if (end == "???" || string.IsNullOrEmpty(end)) continue;
 
-                string outputFile = Path.Combine(outputDir, $"{baseFileName}_Chiddush_{count}.mp3");
+                string outputFile = Path.Combine(outputDir, $"temp_{index}.mp3");
+                snippetFiles.Add(outputFile);
 
-                // FFMPEG Command Explanation:
-                // -y : Overwrite output without asking
-                // -i : Input file
-                // -ss : Start time (placed AFTER -i here for precision cutting, though slower than placing before)
-                // -to : End time
-                // -vn : No video (audio only)
-                // -acodec libmp3lame : Encode to MP3
-                // -q:a 2 : High quality VBR audio
-
-                string arguments = $"-y -i \"{videoPath}\" -ss {start} -to {end} -vn -acodec libmp3lame -q:a 2 \"{outputFile}\"";
-
-                ProcessStartInfo psi = new ProcessStartInfo
-                {
-                    FileName = ffmpegPath,
-                    Arguments = arguments,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardError = true, // Capture errors
-                    RedirectStandardOutput = true
-                };
-
-                try
-                {
-                    using (Process p = Process.Start(psi))
-                    {
-                        // FFmpeg writes progress/errors to StandardError, not StandardOutput
-                        string errorOutput = p.StandardError.ReadToEnd();
-                        p.WaitForExit();
-
-                        if (p.ExitCode != 0)
-                        {
-                            errors.Add($"Snippet {count} Failed:\n{errorOutput}");
-                        }
-                    }
-                }
-                catch (System.ComponentModel.Win32Exception)
-                {
-                    MessageBox.Show($"Could not find FFmpeg at: '{ffmpegPath}'.\n\nPlease ensure FFmpeg is installed and the path in the code is correct.",
-                        "FFmpeg Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    errors.Add($"Snippet {count} Exception: {ex.Message}");
-                }
-
-                count++;
+                tasks.Add(Task.Run(async () => {
+                    var psi = new ProcessStartInfo(ffmpegPath, $"-y -i \"{videoPath}\" -ss {start} -to {end} -vn -acodec libmp3lame -q:a 2 \"{outputFile}\"") { CreateNoWindow = true };
+                    using var p = Process.Start(psi);
+                    await p.WaitForExitAsync();
+                    ((IProgress<int>)progress).Report(1); // Increment bar
+                }));
             }
 
-            if (errors.Count > 0)
-            {
-                // Show the first error log to help debug
-                MessageBox.Show($"Completed with errors.\n\nFirst Error Detail:\n{errors[0]}", "FFmpeg Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            else
-            {
-                MessageBox.Show($"Successfully created {count - 1} audio snippets in:\n{outputDir}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+            await Task.WhenAll(tasks);
+
+            // Final Merge
+            string listFile = Path.Combine(outputDir, "concat.txt");
+            string finalMp3 = Path.Combine(outputDir, $"{baseFileName}_Combined_Chiddushim.mp3");
+            File.WriteAllLines(listFile, snippetFiles.Select(f => $"file '{Path.GetFileName(f)}'"));
+
+            using (var p = Process.Start(new ProcessStartInfo(ffmpegPath, $"-y -f concat -safe 0 -i \"{listFile}\" -c copy \"{finalMp3}\"") { CreateNoWindow = true }))
+                await p.WaitForExitAsync();
+            
+            string fastMp3 = finalMp3.Replace(".mp3", "_Fast.mp3");
+            using (var p = Process.Start(new ProcessStartInfo(ffmpegPath, $"-y -i \"{finalMp3}\" -filter:a \"atempo=2.0\" -q:a 2 \"{fastMp3}\"") { CreateNoWindow = true })) await p.WaitForExitAsync();
+            File.Delete(finalMp3); // Deletes the slow version to save space
+
+            // Cleanup
+            File.Delete(listFile);
+            foreach (var file in snippetFiles) File.Delete(file);
+
+            btnExtractChiddushim.Enabled = true;
+            MessageBox.Show($"Created: {Path.GetFileName(finalMp3)}", "Success");
         }
 
         private static List<string> SanitizeLines(ref List<string> lines)
@@ -453,6 +421,8 @@ namespace Sheva_Daf_YouTube_Timestamper
         private void MainForm_Load(object sender, EventArgs e)
         {
             txtLastDaf.Text = UserSettings.Default.LastDaf;
+            string logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive", "Videos", "log.txt");
+            if (File.Exists(logPath)) txtTimestamps.Text = File.ReadAllText(logPath);
         }
 
         private void BtnGoToEnd_Click(object sender, EventArgs e)

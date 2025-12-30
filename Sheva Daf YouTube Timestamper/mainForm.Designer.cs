@@ -41,6 +41,7 @@
             btnUseNextSet = new Button();
             txtChiddushim = new TextBox();
             btnExtractChiddushim = new Button();
+            progressBar1 = new ProgressBar();
             SuspendLayout();
             // 
             // txtTimestamps
@@ -51,7 +52,7 @@
             txtTimestamps.Multiline = true;
             txtTimestamps.Name = "txtTimestamps";
             txtTimestamps.ScrollBars = ScrollBars.Vertical;
-            txtTimestamps.Size = new Size(529, 332);
+            txtTimestamps.Size = new Size(529, 339);
             txtTimestamps.TabIndex = 0;
             txtTimestamps.Click += TxtTimestamps_Click;
             txtTimestamps.KeyDown += TxtTimestamps_KeyDown;
@@ -60,7 +61,7 @@
             // btnGenerate
             // 
             btnGenerate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnGenerate.Location = new Point(11, 533);
+            btnGenerate.Location = new Point(11, 540);
             btnGenerate.Name = "btnGenerate";
             btnGenerate.Size = new Size(94, 29);
             btnGenerate.TabIndex = 1;
@@ -71,7 +72,7 @@
             // txtLastDaf
             // 
             txtLastDaf.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            txtLastDaf.Location = new Point(382, 536);
+            txtLastDaf.Location = new Point(382, 543);
             txtLastDaf.Name = "txtLastDaf";
             txtLastDaf.PlaceholderText = "&Last Daf of prior set";
             txtLastDaf.RightToLeft = RightToLeft.Yes;
@@ -82,7 +83,7 @@
             // btnClearTimes
             // 
             btnClearTimes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnClearTimes.Location = new Point(113, 533);
+            btnClearTimes.Location = new Point(113, 540);
             btnClearTimes.Name = "btnClearTimes";
             btnClearTimes.Size = new Size(94, 29);
             btnClearTimes.TabIndex = 2;
@@ -93,7 +94,7 @@
             // btnFindMissingTimes
             // 
             btnFindMissingTimes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnFindMissingTimes.Location = new Point(11, 568);
+            btnFindMissingTimes.Location = new Point(11, 579);
             btnFindMissingTimes.Name = "btnFindMissingTimes";
             btnFindMissingTimes.Size = new Size(194, 29);
             btnFindMissingTimes.TabIndex = 5;
@@ -104,7 +105,7 @@
             // btnPrefill
             // 
             btnPrefill.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnPrefill.Location = new Point(447, 572);
+            btnPrefill.Location = new Point(447, 579);
             btnPrefill.Name = "btnPrefill";
             btnPrefill.Size = new Size(94, 29);
             btnPrefill.TabIndex = 6;
@@ -115,7 +116,7 @@
             // btnGoToEnd
             // 
             btnGoToEnd.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnGoToEnd.Location = new Point(214, 533);
+            btnGoToEnd.Location = new Point(214, 540);
             btnGoToEnd.Name = "btnGoToEnd";
             btnGoToEnd.Size = new Size(161, 29);
             btnGoToEnd.TabIndex = 3;
@@ -127,7 +128,7 @@
             // 
             lblAmudBeis.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             lblAmudBeis.AutoSize = true;
-            lblAmudBeis.Location = new Point(12, 618);
+            lblAmudBeis.Location = new Point(12, 625);
             lblAmudBeis.Name = "lblAmudBeis";
             lblAmudBeis.Size = new Size(119, 20);
             lblAmudBeis.TabIndex = 7;
@@ -137,7 +138,7 @@
             // 
             lblAmudAleph.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             lblAmudAleph.AutoSize = true;
-            lblAmudAleph.Location = new Point(400, 618);
+            lblAmudAleph.Location = new Point(400, 625);
             lblAmudAleph.Name = "lblAmudAleph";
             lblAmudAleph.Size = new Size(141, 20);
             lblAmudAleph.TabIndex = 8;
@@ -146,7 +147,7 @@
             // btnUseNextSet
             // 
             btnUseNextSet.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnUseNextSet.Location = new Point(346, 572);
+            btnUseNextSet.Location = new Point(346, 579);
             btnUseNextSet.Margin = new Padding(3, 4, 3, 4);
             btnUseNextSet.Name = "btnUseNextSet";
             btnUseNextSet.Size = new Size(94, 31);
@@ -158,7 +159,7 @@
             // txtChiddushim
             // 
             txtChiddushim.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            txtChiddushim.Location = new Point(11, 353);
+            txtChiddushim.Location = new Point(11, 360);
             txtChiddushim.Multiline = true;
             txtChiddushim.Name = "txtChiddushim";
             txtChiddushim.PlaceholderText = "Chiddushim Start - End times will appear here...";
@@ -169,7 +170,7 @@
             // btnExtractChiddushim
             // 
             btnExtractChiddushim.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnExtractChiddushim.Location = new Point(216, 572);
+            btnExtractChiddushim.Location = new Point(216, 579);
             btnExtractChiddushim.Margin = new Padding(3, 4, 3, 4);
             btnExtractChiddushim.Name = "btnExtractChiddushim";
             btnExtractChiddushim.Size = new Size(124, 30);
@@ -178,11 +179,20 @@
             btnExtractChiddushim.UseVisualStyleBackColor = true;
             btnExtractChiddushim.Click += BtnExtractChiddushim_Click;
             // 
+            // progressBar1
+            // 
+            progressBar1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            progressBar1.Location = new Point(11, 610);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(529, 10);
+            progressBar1.TabIndex = 12;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(553, 647);
+            ClientSize = new Size(553, 654);
+            Controls.Add(progressBar1);
             Controls.Add(btnExtractChiddushim);
             Controls.Add(txtChiddushim);
             Controls.Add(btnUseNextSet);
@@ -220,5 +230,6 @@
         private Label lblAmudBeis;
         private Label lblAmudAleph;
         private Button btnUseNextSet;
+        private ProgressBar progressBar1;
     }
 }
